@@ -22,6 +22,33 @@ export const TOOL_CSS_VARS: Record<string, { bg: string; text: string }> = {
   cursor:      { bg: 'var(--tool-cursor-bg)', text: 'var(--tool-cursor-text)' },
 }
 
+import { supabase } from './supabase'
+
+export async function fetchPosts(): Promise<Post[]> {
+  const { data, error } = await supabase
+    .from('posts')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error || !data || data.length === 0) {
+    return DEMO_POSTS
+  }
+  return data as Post[]
+}
+
+export async function fetchPostBySlug(slug: string): Promise<Post | null> {
+  const { data, error } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('slug', slug)
+    .single()
+
+  if (error || !data) {
+    return DEMO_POSTS.find(p => p.slug === slug) || null
+  }
+  return data as Post
+}
+
 export function searchPosts(posts: Post[], query: string): Post[] {
   const q = query.toLowerCase().trim()
   if (!q) return posts

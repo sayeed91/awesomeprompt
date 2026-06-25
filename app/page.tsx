@@ -1,18 +1,28 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search } from 'lucide-react'
 import PostCard from '@/components/PostCard'
 import FilterBar from '@/components/FilterBar'
-import { DEMO_POSTS, searchPosts } from '@/lib/data'
+import { DEMO_POSTS, searchPosts, fetchPosts } from '@/lib/data'
+import type { Post } from '@/lib/data'
 
 export default function Home() {
+  const [posts, setPosts] = useState<Post[]>(DEMO_POSTS)
+  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'latest' | 'free' | 'premium' | 'animations'>('latest')
   const [sort, setSort] = useState<'popular' | 'new'>('new')
+
+  useEffect(() => {
+    fetchPosts().then(data => {
+      setPosts(data)
+      setLoading(false)
+    })
+  }, [])
   const [selectedTools, setSelectedTools] = useState<string[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [query, setQuery] = useState('')
 
-  let filtered = DEMO_POSTS
+  let filtered = posts
 
   if (query) filtered = searchPosts(filtered, query)
 
@@ -94,7 +104,7 @@ export default function Home() {
         selectedTags={selectedTags}
         onTagsChange={setSelectedTags}
         resultCount={filtered.length}
-        totalCount={DEMO_POSTS.length}
+        totalCount={posts.length}
       />
 
       {/* Grid */}
