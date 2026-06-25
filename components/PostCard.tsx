@@ -8,9 +8,10 @@ import { TOOL_CSS_VARS } from '@/lib/data'
 export default function PostCard({ post }: { post: Post }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [copied, setCopied] = useState(false)
+  const [videoPlaying, setVideoPlaying] = useState(false)
 
   const handleMouseEnter = () => {
-    if (videoRef.current && post.preview_video) {
+    if (videoRef.current) {
       videoRef.current.play().catch(() => {})
     }
   }
@@ -19,6 +20,7 @@ export default function PostCard({ post }: { post: Post }) {
     if (videoRef.current) {
       videoRef.current.pause()
       videoRef.current.currentTime = 0
+      setVideoPlaying(false)
     }
   }
 
@@ -28,8 +30,6 @@ export default function PostCard({ post }: { post: Post }) {
     if (post.is_premium || !post.prompt_text) return
     try {
       await navigator.clipboard.writeText(post.prompt_text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
     } catch {
       const ta = document.createElement('textarea')
       ta.value = post.prompt_text
@@ -39,17 +39,19 @@ export default function PostCard({ post }: { post: Post }) {
       ta.select()
       document.execCommand('copy')
       document.body.removeChild(ta)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
     }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
+
+  const hasVideo = post.preview_video && post.preview_video.length > 0
 
   return (
     <Link href={`/posts/${post.slug}`} style={{ display: 'block' }}>
       <div
-        className="card"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        style={{ cursor: 'pointer' }}
       >
         <div style={{
           position: 'relative',
@@ -57,32 +59,40 @@ export default function PostCard({ post }: { post: Post }) {
           overflow: 'hidden',
           background: 'var(--surface)',
         }}>
+          {/* Thumbnail */}
           <img
             src={post.preview_image}
             alt={post.title}
-            className="thumb card-img"
+            className="card-img"
             style={{
               width: '100%', height: '100%', objectFit: 'cover',
               position: 'absolute', top: 0, left: 0,
+              opacity: videoPlaying ? 0 : 1,
               transition: 'opacity 0.4s ease, transform 0.6s cubic-bezier(0.16,1,0.3,1)',
             }}
           />
-          {post.preview_video && (
+
+          {/* Video */}
+          {hasVideo && (
             <video
               ref={videoRef}
-              src={post.preview_video}
-              muted loop playsInline preload="metadata"
-              className="vid card-img"
+              src={post.preview_video!}
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              onPlaying={() => setVideoPlaying(true)}
               style={{
                 width: '100%', height: '100%', objectFit: 'cover',
                 position: 'absolute', top: 0, left: 0,
-                opacity: 0,
-                transition: 'opacity 0.4s ease, transform 0.6s cubic-bezier(0.16,1,0.3,1)',
+                opacity: videoPlaying ? 1 : 0,
+                transition: 'opacity 0.4s ease',
               }}
             />
           )}
         </div>
 
+        {/* Info */}
         <div style={{
           padding: '14px 0 0',
           display: 'flex',
