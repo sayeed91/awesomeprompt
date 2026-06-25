@@ -2,8 +2,9 @@
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Copy, Check, Lock } from 'lucide-react'
-import { useState } from 'react'
-import { DEMO_POSTS, TOOL_CSS_VARS } from '@/lib/data'
+import { useState, useEffect } from 'react'
+import { DEMO_POSTS, TOOL_CSS_VARS, fetchPostBySlug, fetchPosts } from '@/lib/data'
+import type { Post } from '@/lib/data'
 import PostCard from '@/components/PostCard'
 
 function CopyButton({ text }: { text: string }) {
@@ -46,7 +47,32 @@ function CopyButton({ text }: { text: string }) {
 export default function PostPage() {
   const params = useParams()
   const slug = params.slug as string
-  const post = DEMO_POSTS.find(p => p.slug === slug)
+  const [post, setPost] = useState<Post | null>(null)
+  const [related, setRelated] = useState<Post[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      const p = await fetchPostBySlug(slug)
+      setPost(p)
+      if (p) {
+        const all = await fetchPosts()
+        setRelated(
+          all.filter(r => r.id !== p.id && r.tags?.some(t => p.tags?.includes(t))).slice(0, 3)
+        )
+      }
+      setLoading(false)
+    }
+    load()
+  }, [slug])
+
+  if (loading) {
+    return (
+      <div className="wrapper" style={{ paddingTop: '100px', textAlign: 'center' }}>
+        <p style={{ fontSize: '14px', color: 'var(--muted)' }}>Loading...</p>
+      </div>
+    )
+  }
 
   if (!post) {
     return (
@@ -56,10 +82,6 @@ export default function PostPage() {
       </div>
     )
   }
-
-  const related = DEMO_POSTS
-    .filter(p => p.id !== post.id && p.tags?.some(t => post.tags?.includes(t)))
-    .slice(0, 3)
 
   return (
     <main className="wrapper">
