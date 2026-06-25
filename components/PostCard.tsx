@@ -71,7 +71,7 @@ export default function PostCard({ post }: { post: Post }) {
             <video
               ref={videoRef}
               src={post.preview_video}
-              muted loop playsInline preload="none"
+              muted loop playsInline preload="metadata"
               className="vid card-img"
               style={{
                 width: '100%', height: '100%', objectFit: 'cover',
